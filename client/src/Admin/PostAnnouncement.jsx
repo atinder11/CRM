@@ -22,11 +22,8 @@ const PostAnnouncement = () => {
     }
 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/announcement`, {
+      const res = await fetch("http://localhost:8000/announcement", {
         method: "POST",
-        headers: token ? { Authorization: `Bearer ${token}` } : undefined,
         body: formData,
       });
       const data = await res.json();

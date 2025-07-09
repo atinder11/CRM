@@ -25,20 +25,9 @@ const UserProfileForm = () => {
     e.preventDefault();
     const data = new FormData();
     Object.entries(form).forEach(([key, val]) => data.append(key, val));
-
+ 
     try {
-      const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-      const token = localStorage.getItem("token");
-      const res = await axios.post(
-        `${API_BASE_URL}/profile/`,
-        data,
-        {
-          headers: {
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
-            'Content-Type': 'multipart/form-data',
-          },
-        }
-      );
+      const res = await axios.post("http://localhost:8000/user-profile", data);
       alert(res.data.message);
     } catch (err) {
       alert("Failed to submit profile");

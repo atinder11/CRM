@@ -28,7 +28,6 @@
 //     setFormData({ ...formData, [e.target.name]: e.target.value });
 //   };
 
-//   const handleSubmit = async (e) => {
 //     e.preventDefault();
 
 //     const { name, email, password, role, position } = formData;
@@ -57,6 +56,37 @@
 //      if (res.status === 201 && data.token && data.user) {
 //   localStorage.setItem("token", data.token);
 //   localStorage.setItem("user", JSON.stringify(data.user));
+//   navigate(data.user.role === "admin" ? "/admin" : "/dashboard");
+//   const handleSubmit = async (e) => {
+//     e.preventDefault();
+//
+//     const { name, email, password, role, position } = formData;
+//
+//     if (!name || !email || !password || !role || !position) {
+//       setError("Please fill all fields.");
+//       setSuccess("");
+//       return;
+//     }
+//
+//     if (!email.endsWith("@rstartec.com")) {
+//       setError("Only @rstartec.com emails are allowed.");
+//       setSuccess("");
+//       return;
+//     }
+//
+//     try {
+//       const res = await fetch("http://localhost:8000/register", {
+//         method: "POST",
+//         headers: { "Content-Type": "application/json" },
+//         body: JSON.stringify({ name, email, password, role, position }),
+//       });
+//
+//       const data = await res.json();
+//
+//      if (res.status === 201 && data.token && data.user) {
+//   localStorage.setItem("token", data.token);
+//   localStorage.setItem("user", JSON.stringify(data.user));
+//   dispatch(setProfileData(data.user));
 //   navigate(data.user.role === "admin" ? "/admin" : "/dashboard");
 // } else {
 //         setError(data.error || "Registration failed.");

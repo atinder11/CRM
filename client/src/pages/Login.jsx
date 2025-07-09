@@ -1,6 +1,8 @@
 
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { setProfileData } from "../redux/profileSlice";
 
 /**
  * Login component for user authentication.
@@ -17,6 +19,7 @@ const Login = () => {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  const dispatch = useDispatch();
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -26,6 +29,7 @@ const Login = () => {
     if (email === "admin@rstartec.com" && password === "admin") {
       localStorage.setItem("loggedIn", "true");
       localStorage.setItem("user", JSON.stringify({ email, role: "admin" }));
+      dispatch(setProfileData({ email, role: "admin" }));
       navigate("/admin");
       return;
     }
@@ -44,6 +48,7 @@ const Login = () => {
       if (res.ok && data.token) {
         localStorage.setItem("token", data.token);
         localStorage.setItem("user", JSON.stringify(data.user));
+        dispatch(setProfileData(data.user));
         navigate(data.user.role === "admin" ? "/admin" : "/dashboard");
       } else {
         setError(data.error || "Login failed. Please try again.");

@@ -1,44 +1,52 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
 import Sidebar from "../components/dashboard/Sidebar";
 import DashboardHeaderCard from "../components/dashboard/DashboardHeaderCard";
 import DashboardCards from "../components/dashboard/DashboardCards";
 import CheckInCheckOut from "../components/dashboard/CheckInCheckOut";
 import DashboardContent from "../components/dashboard/DashboardContent";
+import { fetchEmployees } from "../redux/employeesSlice";
+import { fetchAnnouncements } from "../redux/announcementsSlice";
+import { fetchAttendanceWeek, fetchAttendanceMonth } from "../redux/attendanceSlice";
+import { fetchLeaves } from "../redux/leavesSlice";
+import { fetchProfileData } from "../redux/profileSlice";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const Dashboard = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
   const user = JSON.parse(localStorage.getItem("user")) || {};
   const empName = user.name || "Employee";
   const empEmail = user.email || "";
   const empRole = user.role || "Employee";
 
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [employees, setEmployees] = useState([]);
-  const [announcements, setAnnouncements] = useState([]);
-  const [attendanceWeek, setAttendanceWeek] = useState([]);
-  const [attendanceMonth, setAttendanceMonth] = useState([]);
-  const [leaves, setLeaves] = useState([]);
-  const [profileData, setProfileData] = useState(null);
-
   const [profilePic, setProfilePic] = useState("");
   const [leaveForm, setLeaveForm] = useState({
     reason: "",
     from: "",
     to: ""
   });
-const [checkedIn, setCheckedIn] = useState(false);
-const [checkInTime, setCheckInTime] = useState(null);
-const [elapsed, setElapsed] = useState(0);
-const [intervalId, setIntervalId] = useState(null);
+  const [checkedIn, setCheckedIn] = useState(false);
+  const [checkInTime, setCheckInTime] = useState(null);
+  const [elapsed, setElapsed] = useState(0);
+  const [intervalId, setIntervalId] = useState(null);
+
+  // Redux selectors
+  const employees = useSelector((state) => state.employees.list);
+  const announcements = useSelector((state) => state.announcements.list);
+  const attendanceWeek = useSelector((state) => state.attendance.week);
+  const attendanceMonth = useSelector((state) => state.attendance.month);
+  const leaves = useSelector((state) => state.leaves.list);
+  const profileData = useSelector((state) => state.profile.data);
 
   useEffect(() => {
-  const token = localStorage.getItem("token");
-  if (!token || !user?.email) {
-    navigate("/login");
-  }
-}, [navigate]);
+    const token = localStorage.getItem("token");
+    if (!token || !user?.email) {
+      navigate("/login");
+    }
+  }, [navigate]);
 
 const logout = () => {
   localStorage.removeItem("user");
@@ -47,7 +55,8 @@ const logout = () => {
 };
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    // Fetch profile pic separately if needed
+    const fetchProfilePic = async () => {
       const res = await fetch(`${API_BASE_URL}/profile/get-user-profile`, {
         method: "POST",
         headers: {
@@ -62,33 +71,10 @@ const logout = () => {
       }
     };
     if (empEmail) {
-      fetchProfile();
+      fetchProfilePic();
+      dispatch(fetchProfileData(empEmail));
     }
-  }, [empEmail]);
-
-  useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const res = await fetch(`${API_BASE_URL}/profile/get-user-profile`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          },
-          body: JSON.stringify({ email: empEmail })
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setProfileData(data);
-        } else {
-          setProfileData(null);
-        }
-      } catch {
-        setProfileData(null);
-      }
-    };
-    if (empEmail) fetchProfile();
-  }, [empEmail]);
+  }, [empEmail, dispatch]);
 
 
 
@@ -192,83 +178,6 @@ useEffect(() => {
 
 
 
-  const fetchEmployees = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/get-users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (!res.ok) throw new Error('Failed to fetch employees');
-      const data = await res.json();
-      setEmployees(data);
-    } catch (error) {
-      alert('Error loading employees: ' + error.message);
-    }
-  };
-
-  const fetchAnnouncements = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/announcement/view-announcement`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        },
-      });
-      const data = await res.json();
-      setAnnouncements(data);
-    } catch (err) {
-      alert("Error loading announcements");
-    }
-  };
-
-  const fetchAttendance = async () => {
-    try {
-      const [weekRes, monthRes] = await Promise.all([
-        fetch(`${API_BASE_URL}/attendance/attendance-list`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          },
-          body: JSON.stringify({ email: empEmail, filter: "week" })
-        }),
-        fetch(`${API_BASE_URL}/attendance/attendance-list`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`
-          },
-          body: JSON.stringify({ email: empEmail, filter: "month" })
-        })
-      ]);
-      const weekData = await weekRes.json();
-      const monthData = await monthRes.json();
-      setAttendanceWeek(weekData);
-      setAttendanceMonth(monthData);
-    } catch (err) {
-      alert("Error loading attendance");
-    }
-  };
-
-  const fetchLeaves = async () => {
-    try {
-      const res = await fetch(`${API_BASE_URL}/leave/leave-list`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        },
-        body: JSON.stringify({ email: empEmail })
-      });
-      const data = await res.json();
-      setLeaves(data);
-    } catch (err) {
-      alert("Error loading leaves");
-    }
-  };
   const handleLeaveSubmit = async (e) => {
     e.preventDefault();
     const { reason, from, to } = leaveForm;
@@ -297,7 +206,7 @@ useEffect(() => {
       if (res.ok) {
         alert("Leave applied successfully");
         setLeaveForm({ reason: "", from: "", to: "" });
-        fetchLeaves();
+        dispatch(fetchLeaves(empEmail));
       } else {
         alert(data.error || "Failed to apply for leave");
       }
@@ -316,15 +225,18 @@ useEffect(() => {
 
   useEffect(() => {
     if (activeTab === "employees") {
-      fetchEmployees();
+      dispatch(fetchEmployees());
     } else if (activeTab === "announcements") {
-      fetchAnnouncements();
+      dispatch(fetchAnnouncements());
     } else if (activeTab === "attendance") {
-      fetchAttendance();
+      dispatch(fetchAttendanceWeek(empEmail));
+      dispatch(fetchAttendanceMonth(empEmail));
     } else if (activeTab === "leaves") {
-      fetchLeaves();
+      dispatch(fetchLeaves(empEmail));
     }
-  }, [activeTab]);
+    // Always fetch announcements for dashboard
+    dispatch(fetchAnnouncements());
+  }, [activeTab, dispatch, empEmail]);
   return (
     <div className="flex flex-col md:flex-row min-h-screen bg-base-200">
       {/* Sticky Sidebar */}
@@ -357,18 +269,12 @@ useEffect(() => {
 
         {/* Dynamic Content Area */}
         <div className="mt-6 bg-white rounded-xl shadow-md p-6 min-h-[300px]">
-          <DashboardContent
-            activeTab={activeTab}
-            employees={employees}
-            announcements={announcements}
-            attendanceWeek={attendanceWeek}
-            attendanceMonth={attendanceMonth}
-            leaves={leaves}
-            leaveForm={leaveForm}
-            handleLeaveSubmit={handleLeaveSubmit}
-            handleLeaveChange={handleLeaveChange}
-            profileData={profileData}
-          />
+        <DashboardContent
+          activeTab={activeTab}
+          leaveForm={leaveForm}
+          handleLeaveSubmit={handleLeaveSubmit}
+          handleLeaveChange={handleLeaveChange}
+        />
         </div>
       </main>
     </div>

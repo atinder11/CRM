@@ -1,18 +1,22 @@
 import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import AttendanceTable from "../components/admin/AttendanceTable";
 import LeaveApplications from "../components/admin/LeaveApplications";
 import EmployeesTable from "../components/admin/EmployeesTable";
 import EmployeesBarChart from "../components/admin/EmployeesBarChart";
 import DashboardHeader from "../components/admin/DashboardHeader";
 import DashboardCard from "../components/admin/DashboardCard";
+import { fetchEmployees } from "../redux/employeesSlice";
+import { fetchLeaves } from "../redux/leavesSlice";
 
 const AdminDashboard = () => {
   const [resultBox, setResultBox] = useState("");
-  const [attendanceData, setAttendanceData] = useState([]);
-  const [leaves, setLeaves] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [chartData, setChartData] = useState([]);
   const [showChart, setShowChart] = useState(false);
+  const dispatch = useDispatch();
+  const employees = useSelector((state) => state.employees.list);
+  const leaves = useSelector((state) => state.leaves.list);
+  // For attendance, you may want to create a separate admin attendance slice/thunk if needed
+  const [attendanceData, setAttendanceData] = useState([]); // Keep as local for now
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -37,28 +41,14 @@ const AdminDashboard = () => {
     }
   };
 
-  const getAllLeaves = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/leave/all-leaves`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-      const data = await res.json();
-      setLeaves(data);
+  const getAllLeaves = () => {
+    dispatch(fetchLeaves()).then(() => {
       setResultBox("leaves");
       setShowChart(false);
-    } catch (err) {
-      console.error(err);
+    }).catch(() => {
       setResultBox("error-leaves");
-    }
+    });
   };
-
-
-
 
   const openOutlook = (email, name, reason, fromDate, toDate) => {
     const subject = `Regarding Your Leave Application`;
@@ -69,38 +59,26 @@ const AdminDashboard = () => {
     window.open(url, "_blank");
   };
 
-
-
-
-
-  const getEmployees = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/auth/get-users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
-      });
-      const data = await res.json();
-      setEmployees(data);
-      const roleCount = {};
-      data.forEach((emp) => {
-        roleCount[emp.role] = (roleCount[emp.role] || 0) + 1;
-      });
-      const chartData = Object.keys(roleCount).map((role) => ({
-        role,
-        count: roleCount[role],
-      }));
-      setChartData(chartData);
+  const getEmployees = () => {
+    dispatch(fetchEmployees()).then(() => {
       setShowChart(true);
       setResultBox("employees");
-    } catch (err) {
-      console.error(err);
+    }).catch(() => {
       setResultBox("error-employees");
-    }
+    });
   };
+
+  // Compute chartData from employees
+  const chartData = React.useMemo(() => {
+    const roleCount = {};
+    employees.forEach((emp) => {
+      roleCount[emp.role] = (roleCount[emp.role] || 0) + 1;
+    });
+    return Object.keys(roleCount).map((role) => ({
+      role,
+      count: roleCount[role],
+    }));
+  }, [employees]);
 
   const handleLogout = () => {
     localStorage.removeItem("token");

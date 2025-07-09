@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaArrowLeftLong } from "react-icons/fa6";
+import { useDispatch } from "react-redux";
+import { fetchAnnouncements } from "../redux/announcementsSlice";
 
 const PostAnnouncement = () => {
   const [subject, setSubject] = useState("");
@@ -8,6 +10,8 @@ const PostAnnouncement = () => {
   const [attachment, setAttachment] = useState(null);
   const navigate = useNavigate();
 
+  // removed duplicate non-async handleSubmit
+  const dispatch = useDispatch();
   const handleSubmit = async () => {
     if (!subject || !body) {
       alert("Please fill all required fields");
@@ -31,6 +35,9 @@ const PostAnnouncement = () => {
       });
       const data = await res.json();
       alert(data.message || data.error);
+      if (res.ok) {
+        dispatch(fetchAnnouncements());
+      }
     } catch (err) {
       alert("Failed to post announcement. Try again later.");
     }

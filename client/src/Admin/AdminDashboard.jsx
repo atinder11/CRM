@@ -1,25 +1,29 @@
 import React, { useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import AttendanceTable from "../components/admin/AttendanceTable";
 import LeaveApplications from "../components/admin/LeaveApplications";
 import EmployeesTable from "../components/admin/EmployeesTable";
 import EmployeesBarChart from "../components/admin/EmployeesBarChart";
 import DashboardHeader from "../components/admin/DashboardHeader";
 import DashboardCard from "../components/admin/DashboardCard";
+import { fetchEmployees } from "../redux/employeesSlice";
+import { fetchLeaves } from "../redux/leavesSlice";
 
 const AdminDashboard = () => {
   const [resultBox, setResultBox] = useState("");
-  const [attendanceData, setAttendanceData] = useState([]);
-  const [leaves, setLeaves] = useState([]);
-  const [employees, setEmployees] = useState([]);
-  const [chartData, setChartData] = useState([]);
   const [showChart, setShowChart] = useState(false);
+  const dispatch = useDispatch();
+  const employees = useSelector((state) => state.employees.list);
+  const leaves = useSelector((state) => state.leaves.list);
+  // For attendance, you may want to create a separate admin attendance slice/thunk if needed
+  const [attendanceData, setAttendanceData] = useState([]); // Keep as local for now
 
   const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
   const showAttendance = async () => {
     try {
       const token = localStorage.getItem("token");
-      const attendanceRes = await fetch(`${API_BASE_URL}/attendance/attendance-all`, {
+      const attendanceRes = await fetch(`${API_BASE_URL}/attendance/all`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -37,70 +41,54 @@ const AdminDashboard = () => {
     }
   };
 
-  const getAllLeaves = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/leave/all-leaves`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+  const getAllLeaves = () => {
+    dispatch(fetchLeaves())
+      .then(() => {
+        setResultBox("leaves");
+        setShowChart(false);
+      })
+      .catch(() => {
+        setResultBox("error-leaves");
       });
-      const data = await res.json();
-      setLeaves(data);
-      setResultBox("leaves");
-      setShowChart(false);
-    } catch (err) {
-      console.error(err);
-      setResultBox("error-leaves");
-    }
   };
-
-
-
 
   const openOutlook = (email, name, reason, fromDate, toDate) => {
     const subject = `Regarding Your Leave Application`;
     const body = `Hi ${name},\n\nYour leave request from ${new Date(
       fromDate
-    ).toLocaleDateString()} to ${new Date(toDate).toLocaleDateString()} for the reason "${reason}" has been received.\n\nRegards,\nAdmin`;
-    const url = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    ).toLocaleDateString()} to ${new Date(
+      toDate
+    ).toLocaleDateString()} for the reason "${reason}" has been received.\n\nRegards,\nAdmin`;
+    const url = `mailto:${email}?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(body)}`;
     window.open(url, "_blank");
   };
 
-
-
-
-
-  const getEmployees = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      const res = await fetch(`${API_BASE_URL}/auth/get-users`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        },
+  const getEmployees = () => {
+    dispatch(fetchEmployees())
+      .then(() => {
+        setShowChart(true);
+        setResultBox("employees");
+      })
+      .catch(() => {
+        setResultBox("error-employees");
       });
-      const data = await res.json();
-      setEmployees(data);
-      const roleCount = {};
-      data.forEach((emp) => {
-        roleCount[emp.role] = (roleCount[emp.role] || 0) + 1;
-      });
-      const chartData = Object.keys(roleCount).map((role) => ({
-        role,
-        count: roleCount[role],
-      }));
-      setChartData(chartData);
-      setShowChart(true);
-      setResultBox("employees");
-    } catch (err) {
-      console.error(err);
-      setResultBox("error-employees");
-    }
   };
+
+  // Compute chartData from employees
+  const chartData = React.useMemo(() => {
+    const roleCount = {};
+    employees.forEach((emp) => {
+      roleCount[emp.role] = (roleCount[emp.role] || 0) + 1;
+    });
+    return Object.keys(roleCount).map((role) => ({
+      role,
+      count: roleCount[role],
+    }));
+  }, [employees]);
+
+  //Logout
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -112,7 +100,9 @@ const AdminDashboard = () => {
   return (
     <div className="p-6 bg-gray-100 min-h-screen text-gray-800">
       <DashboardHeader onLogout={handleLogout} />
-      <h2 className="text-3xl font-bold mb-8 text-center">Welcome to Admin Dashboard</h2>
+      <h2 className="text-3xl font-bold mb-8 text-center">
+        Welcome to Admin Dashboard
+      </h2>
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         <DashboardCard
           iconClass="bi bi-clock-history text-purple-600"
@@ -145,12 +135,22 @@ const AdminDashboard = () => {
       </div>
       {showChart && <EmployeesBarChart chartData={chartData} />}
       <div className="mt-6">
-        {resultBox === "attendance" && <AttendanceTable attendanceData={attendanceData} />}
-        {resultBox === "leaves" && <LeaveApplications leaves={leaves} openOutlook={openOutlook} />}
+        {resultBox === "attendance" && (
+          <AttendanceTable attendanceData={attendanceData} />
+        )}
+        {resultBox === "leaves" && (
+          <LeaveApplications leaves={leaves} openOutlook={openOutlook} />
+        )}
         {resultBox === "employees" && <EmployeesTable employees={employees} />}
-        {resultBox === "error-attendance" && <p className="text-red-500">Error loading attendance data.</p>}
-        {resultBox === "error-leaves" && <p className="text-red-500">Failed to fetch leave data.</p>}
-        {resultBox === "error-employees" && <p className="text-red-500">Failed to fetch employees data.</p>}
+        {resultBox === "error-attendance" && (
+          <p className="text-red-500">Error loading attendance data.</p>
+        )}
+        {resultBox === "error-leaves" && (
+          <p className="text-red-500">Failed to fetch leave data.</p>
+        )}
+        {resultBox === "error-employees" && (
+          <p className="text-red-500">Failed to fetch employees data.</p>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,12 @@
 import React from "react";
 
-const DashboardLeaveSection = ({ leaves, leaveForm, handleLeaveSubmit, handleLeaveChange }) => (
+// Debug log for leaves prop
+// eslint-disable-next-line no-console
+const debugLeaves = (leaves) => { console.log('[DashboardLeaveSection] leaves:', leaves); };
+
+const DashboardLeaveSection = ({ leaves, leaveForm, handleLeaveSubmit, handleLeaveChange }) => {
+  debugLeaves(leaves);
+  return (
   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
     {/* Apply Leave Form */}
     <div className="bg-white p-6 rounded-xl shadow-md">
@@ -70,6 +76,7 @@ const DashboardLeaveSection = ({ leaves, leaveForm, handleLeaveSubmit, handleLea
       </ul>
     </div>
   </div>
-);
+  );
+};
 
 export default DashboardLeaveSection;

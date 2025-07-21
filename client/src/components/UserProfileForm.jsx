@@ -25,12 +25,17 @@ const UserProfileForm = () => {
     e.preventDefault();
     const data = new FormData();
     Object.entries(form).forEach(([key, val]) => data.append(key, val));
+    // Add userId from localStorage user object
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user && user._id) {
+      data.append("userId", user._id);
+    }
 
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
       const token = localStorage.getItem("token");
       const res = await axios.post(
-        `${API_BASE_URL}/profile/`,
+        `${API_BASE_URL}/profile`,
         data,
         {
           headers: {
@@ -87,7 +92,7 @@ const UserProfileForm = () => {
               <InputField
                 label="Work Number"
                 name="workNumber"
-                type="tel"
+                type="number"
                 onChange={handleChange}
               />
               <InputField
@@ -146,7 +151,7 @@ const UserProfileForm = () => {
                   type="submit"
                   className="w-full bg-purple-600 text-white font-semibold py-3 rounded-xl hover:bg-purple-700 transition shadow-lg"
                 >
-                  🚀 Submit Profile
+                   Submit Profile
                 </button>
               </div>
             </form>
@@ -159,9 +164,9 @@ const UserProfileForm = () => {
  
 export default UserProfileForm;
  
-////////////////////////////////////////////////
-// 🔥 Reusable Components for Clean Code 🔥 //
-////////////////////////////////////////////////
+
+// Reusable Components for Clean Code  //
+
  
 const InputField = ({ label, name, type = "text", onChange }) => (
   <div>

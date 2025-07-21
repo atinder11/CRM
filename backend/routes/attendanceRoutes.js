@@ -8,10 +8,10 @@ const {
   attendanceAll,
 } = require("../controllers/attendanceController");
 
-router.post("/check-in", checkIn);
-router.post("/check-out", checkOut);
-router.post("/check-in-status", checkInStatus);
-router.post("/attendance-list", attendanceList);
-router.post("/attendance-all", attendanceAll);
+router.post("/checkin", checkIn); //checkIn 
+router.post("/checkout", checkOut); //checkout
+router.post("/status", checkInStatus);
+router.post("/user", attendanceList); //user //list
+router.post("/all", attendanceAll); //admin   //all
 
 module.exports = router;

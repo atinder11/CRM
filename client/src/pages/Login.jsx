@@ -1,36 +1,23 @@
-
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-/**
- * Login component for user authentication.
- * Handles login logic, admin shortcut, and role-based navigation.
- */
+import { useDispatch } from "react-redux";
+import { setProfileData } from "../redux/profileSlice";
+ 
 const Login = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
-
-  // Update form input state
+  const dispatch = useDispatch();
+ 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
-  // Handle form submission
+ 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const { email, password } = formData;
-
-    // Admin shortcut login (for dev/testing)
-    if (email === "admin@rstartec.com" && password === "admin") {
-      localStorage.setItem("loggedIn", "true");
-      localStorage.setItem("user", JSON.stringify({ email, role: "admin" }));
-      navigate("/admin");
-      return;
-    }
-
-    // Regular login via backend API
+ 
     try {
       const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
       const res = await fetch(`${API_BASE_URL}/auth/login`, {
@@ -38,32 +25,34 @@ const Login = () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
-
+ 
       const data = await res.json();
-
-      if (res.ok && data.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.user));
-        navigate(data.user.role === "admin" ? "/admin" : "/dashboard");
-      } else {
+if (res.ok && data.token) {
+  localStorage.setItem("token", data.token);
+  localStorage.setItem("user", JSON.stringify(data.user));
+  dispatch(setProfileData(data.user));
+ 
+  const role = data.user.role.toLowerCase();
+  navigate(role === "admin" || role === "management" ? "/admin" : "/dashboard");
+} else {
         setError(data.error || "Login failed. Please try again.");
       }
     } catch {
       setError("Something went wrong. Please try again later.");
     }
   };
-
+ 
   return (
     <div className="min-h-screen flex items-center justify-center bg-base-200 px-4 py-10">
       <div className="w-full max-w-6xl bg-base-100 rounded-2xl shadow-xl overflow-hidden flex flex-col-reverse md:flex-row">
-        
+ 
         {/* ---------- Left: Login Form Section ---------- */}
         <div className="w-full md:w-1/2 p-8 md:p-10 bg-neutral text-neutral-content">
           <h2 className="text-3xl font-bold text-center mb-2">Login</h2>
           <p className="text-center text-sm mb-6 text-gray-300">Enter your credentials</p>
-
+ 
           {error && <div className="alert alert-error mb-4 py-2">{error}</div>}
-
+ 
           <form onSubmit={handleSubmit} className="space-y-4">
             <input
               type="email"
@@ -87,7 +76,7 @@ const Login = () => {
               Login
             </button>
           </form>
-
+ 
           {/* Sign Up redirect */}
           <div className="text-center mt-6">
             <p className="text-sm mb-2">Don't have an account?</p>
@@ -99,7 +88,7 @@ const Login = () => {
             </button>
           </div>
         </div>
-
+ 
         {/* ---------- Right: Image + Welcome Section ---------- */}
         <div className="w-full md:w-1/2 bg-gradient-to-br from-purple-500 to-indigo-600 text-white p-10 flex flex-col justify-center items-center text-center">
           <h1 className="text-4xl font-bold mb-4 leading-snug">
@@ -117,5 +106,6 @@ const Login = () => {
     </div>
   );
 };
-
+ 
 export default Login;
+ 

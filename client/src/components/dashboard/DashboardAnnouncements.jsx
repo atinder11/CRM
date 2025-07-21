@@ -1,8 +1,10 @@
 import React from "react";
 import { BsFileEarmarkArrowDownFill } from "react-icons/bs";
 
-const DashboardAnnouncements = ({ announcements }) => (
-  <div>
+const DashboardAnnouncements = ({ announcements }) => {
+  console.log('DashboardAnnouncements announcements:', announcements);
+  return (
+    <div>
     <h4 className="text-xl font-semibold mb-4 text-purple-700">Announcements</h4>
     <ul className="space-y-4">
       {announcements.length === 0 ? (
@@ -13,24 +15,28 @@ const DashboardAnnouncements = ({ announcements }) => (
             <h5 className="text-lg font-semibold text-purple-800 mb-1">{a.subject}</h5>
             <p className="text-gray-700 mb-2">{a.body}</p>
             <small className="text-sm text-gray-500 block mb-3">
-              {new Date(a.date).toLocaleString()}
+              {new Date(a.createdAt).toLocaleString()}
             </small>
             {a.attachment && a.attachment.endsWith(".pdf") && (
+             
               <a
-                href={`${import.meta.env.VITE_API_BASE_URL?.startsWith('/api') ? '' : import.meta.env.VITE_API_BASE_URL || ''}${a.attachment}`}
-                download
-                target="_blank"
-                className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition"
-              >
-                <BsFileEarmarkArrowDownFill className="text-lg" />
-                Download Attachment
-              </a>
+  href={`${import.meta.env.VITE_API_BASE_URL1}${a.attachment}`}
+  download
+  target="_blank"
+  rel="noopener noreferrer"
+  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition"
+>
+  <BsFileEarmarkArrowDownFill className="text-lg" />
+  Download Attachment
+</a>
+
             )}
           </li>
         ))
       )}
     </ul>
-  </div>
-);
+    </div>
+  );
+};
 
 export default DashboardAnnouncements;

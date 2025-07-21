@@ -23,7 +23,10 @@ const DashboardCards = ({ setActiveTab }) => (
     </div>
     <div className="bg-gradient-to-r from-purple-800 to-indigo-600 text-white rounded-xl shadow-lg p-6">
       <h3 className="text-lg font-bold">Attendance</h3>
-      <p className="mb-4">Track working hours & logs.</p>
+      <p className="mb-4">Track working hours & logs.
+        <br/>
+        <br/>
+      </p>
       <button 
         className="btn btn-sm btn-neutral"
         onClick={() => setActiveTab("attendance")}

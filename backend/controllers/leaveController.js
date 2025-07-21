@@ -1,35 +1,71 @@
+// Import the Leave model for handling leave applications
 const Leave = require("../models/Leave");
 
+// Import mongoose for working with ObjectId
+const mongoose = require("mongoose");
+
+// Controller to handle applying for leave
 exports.applyLeave = async (req, res) => {
   try {
-    const { name, email, reason, from, to } = req.body;
-    if (!name || !email || !reason || !from || !to) return res.status(400).json({ error: "All fields are required" });
+    // Get user ID from the authenticated request (set by auth middleware)
+    const decoded = req.user.id; // already a string
 
-    const leave = new Leave({ name, email, reason, from: new Date(from), to: new Date(to) });
-    await leave.save();
-    res.status(201).json({ message: "Leave applied successfully", data: leave });
+    // Create a new leave application instance
+    const leave = new Leave({
+      userId: decoded,              // Associate leave with the user
+      reason: req.body.reason,     // Reason for leave
+      from: req.body.from,         // Start date of leave
+      to: req.body.to              // End date of leave
+    });
+
+    // Save the leave to the database
+    const saved = await leave.save();
+
+    // Send success response with saved leave data
+    res.status(201).json({
+      message: "Leave applied successfully",
+      data: saved
+    });
+
   } catch (err) {
-    res.status(500).json({ error: "Failed to apply for leave" });
+    // Handle errors during leave application
+    res.status(500).json({
+      error: "Failed to apply for leave",
+      details: err.message
+    });
   }
 };
 
+// Controller to fetch all leave applications of a specific user
 exports.getUserLeaves = async (req, res) => {
-  const { email } = req.body;
-  if (!email) return res.status(400).json({ error: "Email required" });
-
+  // Extract user ID from authenticated request
+  const userId = req.user.id;
   try {
-    const leaves = await Leave.find({ email }).sort({ createdAt: -1 });
+    // Find leaves by userId, convert to ObjectId for comparison, sort by newest first
+    const leaves = await Leave.find({ userId: new mongoose.Types.ObjectId(userId) }).sort({ createdAt: -1 });
+
+    // Return list of user-specific leaves
     res.status(200).json(leaves);
   } catch (err) {
+    // Log and return server error
+    console.error("Get User Leaves Error:", err);
     res.status(500).json({ error: "Failed to fetch leaves" });
   }
 };
 
+// Controller to fetch all leave applications (admin functionality)
 exports.getAllLeaves = async (req, res) => {
   try {
-    const leaves = await Leave.find().sort({ createdAt: -1 });
+    // Fetch all leave documents and populate user details from Register model
+    const leaves = await Leave.find()
+      .populate('userId', 'name email empId role position') // Populate selected fields of the user
+      .sort({ createdAt: -1 }); // Sort by most recent
+
+    // Return all leaves with user info
     res.status(200).json(leaves);
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch leave applications" });
+    // Log and return server error
+    console.error("Get All Leaves Error:", err);
+    res.status(500).json({ error: "Failed to fetch leave applications", details: err.message });
   }
 };
